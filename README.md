@@ -12,5 +12,5 @@ string- decryptFromServer( str);
 
 PHP functions
 
-string- decryptFromClient( $str);  
 string- encryptToClient( $str); 
+string- decryptFromClient( $str);  
