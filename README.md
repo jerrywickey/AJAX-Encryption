@@ -1,6 +1,6 @@
 AJAX-Encryption
 ===============
-finishing documentation and test page.  Check back mid week
+finishing documentation and test page.  Check back mid week  first week in Feb
 
 
 Library for easy RSA encryption of all AJAX data communication between client and server on any web page.  Library is javascript and PHP
