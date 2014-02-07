@@ -1,49 +1,21 @@
-// Jerry's Crypto-Ajax JavaScript and PHP Library
+// Jerry's Crypto-AJAX JavaScript and PHP Library
 // Jan 8, 2014   Key West, FL US   
-// jerry @-symbol jerrywickey dot-symbol-. com   
+// email - jerry (@-symbol-) jerrywickey (.-symbol-) com   
 // phone - eight hundred - seven two two - two two eight zero
 
 // thanks to Stevish RSA http://stevish.com/rsa-encryption-in-pure-php 
 // thanks to Ali Farhadi RC4 https://gist.github.com/farhadi/2185197
 
-
-//  html javascript pages must include in HTML header 
-
-// 	  {script src="your_path/jerrysLibrary.js">{/script>
-
-//  change both '{' to less than signs 
-//  change 'path' to the directory on your server to which you saved this file
+// This newest version of this file and its manual can be downloaded from 
+// http://jerrywickey.com/test/testJerrysLibrary.php
 
 
-//  Use the following in body onload, if encryption is desired
-
-// 	  {body onload="initCrypto( 1024 )" style="your-style">
-
-//  set 1024 to any number of bits destired.  max 2048
-//  when an encrypted channel is secured the function 
-
-//    cryptoStarted( JL_crybits, JL_cryname, JL_rc4keys) 
-
-//  will be called, if it exists.  You write it if you wish to do something with 
-//  it's three parameters.  number of bits, name of encryption file on server, and 
-//  the public encryption keys.   This is merely for your information.  It is optional.
-//  You don't need to keep track of thse things.  The two encryption functions below 
-//  keep and use this data automatically.
-
-//    cryptoUnavalable( JL_crybits, JL_cryname, JL_rc4keys)  is called if unavailable
-
-//    initCrypto( number_bits )  could be called again from this function
+// cryptoStarted
+// cryptoUnavalable
 
 
-//  The only encryption functions you need are these, 
-//  which work after onload="initCrypto(
-
-//    encryptToServer( str)              decryptFromServer( str)
-
-
-//  and optionally crypto communication status appears in th <div below, if it exits.  
-
-//    <div id="securecomm" style="position:fixed; top:-30px; right:20px; height:20px; overflow:hidden; border-radius:5px; background:#ddd; padding:5px; font-family:tahoma; font-size:16px; color:grey;"></div><div style="position:fixed; top: 0px;right: 0px;width: 300px; height:5px;" onmouseover="JL_cryptcomm(' ',3,'')">&nbsp;</div>
+// if this div is included in HTML page, secure communication status is updated to it
+//    <div id="secureComIcon"></div>
 
 
 //  path to jerrysLibrary.php  domain and subdirectory
@@ -55,10 +27,11 @@ var PHPlibpath= 'http://'+window.location.hostname + '/test/jerrysLibrary.php';
 
 //  if PHP encryption or AJAX is not desired set JL_setAjax to false
 //  miscellaneous functions are still availble
+//  this can be set in the <body onload=  as well
 var JL_setAjax= true;
 
 
-var JL_crybits= 512;
+var JL_crybits= 1024;
 var JL_rc4keys= '';
 var JL_speedts= 0;
 var JL_enckeys= ''; 
@@ -72,7 +45,7 @@ var JL_cryActive= false;
 var JL_ajax= new Array();
 var JL_ajaxu= new Array();
 var JL_crystart= 0;
-if ( JL_setAjax){
+if ( JL_setAjax && true){  // set this to false when testing is complete.
 	multihttp(( PHPlibpath + '?serverhandshake=marko'), '', 'JL_enableAXCCStrue');
 	JL_crystart= 10;
 	JL_cryptcomm( 'Checking Communication Status', 10, 'whirl,blink');		
@@ -81,11 +54,10 @@ if ( JL_setAjax){
 
 // User Crypto Functions =========================================================
 
-function initCrypto( a){
+function initCrypto( a){ 
 	if ( parseInt( a) > 0){
-		JL_crybits= a;
+		JL_crybits= parseInt( a);
 	}
-	JL_crybits= parseInt( JL_crybits);	
 	if ( JL_crystart > 0 && JL_setAjax){
 		JL_crystart--;
 		setTimeout(( "initCrypto( "+a+")"), 500); 
@@ -97,26 +69,32 @@ function initCrypto( a){
 		JL_rsakey2= '';
 		JL_crydone= true;
 		JL_cryActive= false;
-		var l= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+		var safe= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 		for ( var i=0; i<10; i++){
-			JL_cryname+= l.charAt( parseInt( Math.random() * l.length));
+			JL_cryname+= safe.charAt( parseInt( Math.random() * safe.length));
 		}
-		var n= 1;
 		if (JL_crybits<50){ JL_crybits= 50; }
-		if (JL_crybits>200){ n= 2; }
-		if (JL_crybits>500){ n= 3; }
-		if (JL_crybits>800){ n= 10; }
-		if (JL_crybits>1200){ n= 20; }
-		if (JL_crybits>1600){ n= 40; }
-		if (JL_crybits>2000){ n= 60; }
 		if (JL_crybits>2048){ JL_crybits= 2048; }
+		var c= new Array( 0, 50, 200, 500, 800, 1200, 1600, 2000);
+		var b= new Array( 0,  1,   2,   3,   5,    7,   10,   15);
+		var n= 0; while ( JL_crybits > c[++n]){}
+		var result= '1';
+		var str= '12345678901234567891';
+		var a= '1234567';
+		var b= '23456789002345678903';
 		var d1= new Date(); 
-		for (i=0; i<3; i++){ 
-			var t= JL_bcdiv( '123456789012345678901234567890', '12'); 
+		for (i=0; i<3; i++){ 		
+			if ( i==1){ d1= new Date(); }
+			if ( JL_bccomp( JL_bcmod( a, '2'), '1')==0) {
+				result = JL_bcmod( JL_bcmul( result, str), b);
+			}
+			str= JL_bcmod( JL_bcmul( str, str), b);
+			a= JL_bcdiv( a, '2');
+			JL_bccomp( a, '0');
 		} 
 		var d2= new Date();
 		JL_speedts= ''+( d2.getTime() - d1.getTime()); 
-		for (i=0; i<n; i++){
+		for (i=0; i<b[n]; i++){
 			multihttp(( PHPlibpath+'?newchannel='+JL_crybits+'&n='+JL_cryname+'&t='+JL_speedts), '', 'JL_initCryptoStep2')
 		}
 		JL_cryptcomm( 'Securing Encrypted Channel', 60, 'whirl,blink,count');
@@ -124,32 +102,39 @@ function initCrypto( a){
 }
 
 function encryptToServer( str){
+	if ( !JL_cryActive){
+		alert ( "A secure channel has not yet been established.\n\nWait a few seconds and try again\n\n003");
+		return 'none';	
+	}
 	JL_cryptcomm( '<span style="color:red">Encrypted Uplink</span>', 6, '');
-	var VA= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
-	var VE= '!#$*';
+	var safe= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+	str= JL_randomFill( safe, ( 53- (( str.length + 14) % 53))) + 'auTheNtiCate_-' + str;
+	var estr= JL_RC4crypt( str, JL_rc4keys);
+	var valid= safe + '-_';
+	var esc= '().*';
 	var out= '';
-	for (var i=0; i<str.length; i++){
-		if ( VA.indexOf( str.charAt(i)) > -1){
-			out+= str.charAt(i);
+	for (var i=0; i<estr.length; i++){
+		if ( valid.indexOf( estr.charAt(i)) > -1){
+			out+= estr.charAt(i);
 		}else{
-			out+= VE.charAt( Math.floor( str.charCodeAt(i) / 64));
-			out+= VA.charAt( str.charCodeAt(i) % 64);		
+			out+= esc.charAt( Math.floor( estr.charCodeAt(i) / 64));
+			out+= valid.charAt( estr.charCodeAt(i) % 64);		
 		}
 	}
-	out= '_-'+out;
-	while ( out.length < 53){
-		out= '_________'+out;
-	}
-	while ( out.length % 53 > 10 ){
-		out= '_________'+out;
-	}		
-	return JL_RC4crypt( out, JL_rc4keys, '');
+	return out;
 }
 
 function decryptFromServer( str){
+	if ( !JL_cryActive){
+		alert ( "A secure channel has not yet been established.\n\nWait a few seconds and try again\n\n003");
+		return 'none';	
+	}
 	JL_cryptcomm( '<span style="color:green">Decrypted Downlink</span>', 4, '');
-	var t= JL_RC4crypt( str, JL_rc4keys, '');
-	return t.substring( t.indexOf( '_-') + 2);
+	var dstr= JL_RC4crypt( str, JL_rc4keys);
+	if ( dstr.indexOf( 'auTheNtiCate_-') == -1){
+		alert( "WARNING:\n\nInvalid encrypted data received\n\nThis may simply be an Internet communication error");
+	}
+	return dstr.substring( dstr.indexOf( 'auTheNtiCate_-') + 14);
 }
 
 
@@ -157,7 +142,6 @@ function decryptFromServer( str){
 // Cookie, Session and XDomain functions =========================================
 
 function setcookie( aname, avalue, time, path, adomain){
-// sets a cookie	
 	return synchttp(( PHPlibpath+'?setcky='
 		+encodeURIComponent( aname)
 		+'&v='+ encodeURIComponent( avalue)
@@ -167,40 +151,33 @@ function setcookie( aname, avalue, time, path, adomain){
 }
 
 function getcookie( aname){
-// returns the value of a cookie
 	return synchttp(( PHPlibpath+'?getcky='+encodeURIComponent( aname)), '');
 }
 
 function setsession( aname, avalue){
-// sets a session variable on your server
-	return synchttp(( PHPlibpath+'?setses='+encodeURIComponent( aname)+'&v='+encodeURIComponent( avalue)), '');
+	return synchttp(( PHPlibpath +'?setses=' +encodeURIComponent( aname) +'&v=' +encodeURIComponent( avalue)), '');
 }
 
 function getsession( aname){
-// returns a session variable value
 	return synchttp(( PHPlibpath+'?getses='+encodeURIComponent( aname)), '');
 }
 
 function Xdomain( aurl, post, cookiejar, agent, timeout){
-// returns the source code for any url
 	return synchttp(( PHPlibpath+'?xdomain='+encodeURIComponent( aurl)
 		+'&a='+encodeURIComponent( agent)+'&t='+encodeURIComponent( timeout)
 		+'&c='+encodeURIComponent( cookiejar)), 
-		post);
+		('&p='+encodeURIComponent( post)));
 }
 
 function multiXdomain( aurl, post, cookiejar, agent, timeout, response){ 
-// returns the source code for any url asynchronously.
-// that is that it sends the result to the function named in 'response'
 		multihttp(( PHPlibpath+'?xdomain='+encodeURIComponent( aurl)
 		+'&a='+encodeURIComponent( agent)
 		+'&t='+encodeURIComponent( timeout)
 		+'&c='+encodeURIComponent( cookiejar)), 
-		post, response);
+		('&p='+encodeURIComponent( post)), response);
 }
 
 function synchttp( where, post){
-// returns the output of a page on your server
 	var http= JL_browserspec();
 	if ( http){
 		var methodt= 'GET';
@@ -219,8 +196,6 @@ function synchttp( where, post){
 }
 
 function multihttp( where, post, dowith){
-// returns the output of a page on your server asynchronously 
-// that is that it sends the result to the function named in 'dowith'
 	var w= -1;
 	var u= 0;
 	while ( u < JL_ajaxu.length && w==-1){
@@ -257,17 +232,17 @@ function multihttp( where, post, dowith){
 
 // User Miscellaneous Functions ==================================================
 
-function ge(a){  // a short cut for document.getElementById()  
+function ge(a){  
 	return document.getElementById(a);
 }
 
-function ms(a){  // a short cut for document.body.style.cursor=
+function ms(a){  
 	if (a==1){a= 'default';}
 	if (a==2){a= 'pointer';}
 	document.body.style.cursor= a; 
 }
 
-function getypos(obj){  // returns the verticle position in pixels of an element
+function getypos(obj){  
 	var y= 0
 	while(obj){
 		y= y+obj.offsetTop;
@@ -276,7 +251,7 @@ function getypos(obj){  // returns the verticle position in pixels of an element
 	return y;
 }
 
-function getxpos(obj){  // returns the horizontal position in pixels of an element
+function getxpos(obj){  
 	var x= 0
 	while(obj){
 		x= x+obj.offsetLeft;
@@ -285,7 +260,7 @@ function getxpos(obj){  // returns the horizontal position in pixels of an eleme
 	return x;
 }
 
-function ekey(a){  // returns true if the enter key is pressed
+function ekey(a){  
 	var key= 0;
 	if (window.event){
 		key= window.event.keyCode;
@@ -297,7 +272,7 @@ function ekey(a){  // returns true if the enter key is pressed
 	return r;
 }
 
-function trim( txt, ofthese){  // trim function that works in all broswers
+function trim( txt, ofthese){  
 	var trims= " \t\r\n";
 	txt= ''+txt;
 	ofthese= ''+ofthese;
@@ -314,7 +289,6 @@ function trim( txt, ofthese){  // trim function that works in all broswers
 }
 
 function subtute( replacethis, withthis, intext){  
-// replaceall that avoids the limitations of regular expression
 	replacethis= ''+replacethis;
 	withthis= ''+withthis;
 	intext= ''+intext;
@@ -334,6 +308,7 @@ function subtute( replacethis, withthis, intext){
 // internal functions ===========================================================
 
 function JL_initCryptoStep2( a){
+	var ret= true;
 	if ( JL_setAjax){
 		if ( JL_crydone){
 			var b= unescape(a);
@@ -349,15 +324,16 @@ function JL_initCryptoStep2( a){
 				}
 				JL_RSAencrypt( JL_rc4keys, c[1], c[2], 'JL_initCryptoStep3');
 			}else if( b.indexOf('not found,')==0){
-				multihttp(( PHPlibpath+'?newchannel='+JL_crybits+'&n='+JL_cryname+'&t='+JL_speedts), '', 'JL_initCryptoStep2');	
+				multihttp(( PHPlibpath+'?newchannel='+JL_crybits+'&n='+JL_cryname+'&t='+JL_speedts), '', 'JL_initCryptoStep2')
 			}else{
-				JL_setAjax= false;
-				alert("PHP Library path is incorrect or PHP library is not found.\n\najax, Cookies, Sessions, XDomain and Crypto javascript functions may not be available.\n\nIf this is intentional set\nJL_setAjax \nto false in the file jerrysLibrary.js\n\n001");		
+				ret= false;
 			}
 		}
 	}else{
 		JL_cryptcomm( 'Secure channel canceled', 3, '');				
+		ret= false;
 	}
+	return ret;
 }
 
 function JL_initCryptoStep3( k){
@@ -366,8 +342,29 @@ function JL_initCryptoStep3( k){
 }
 
 function JL_initCryptoStep4( a){
-	if ( JL_RC4crypt( unescape( a), JL_rc4keys, 'test')=='encryption_secured'){	
-		JL_cryptcomm( (JL_crybits+'-bit Secure Channel Established'), 8, 'blink');
+	if ( JL_RC4crypt( unescape( a), JL_rc4keys)=='encryption_secured'){	
+		var safe= '01234567890123456789024571';
+		safe+= 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+		var digits= Math.floor( Math.log(2) * JL_crybits / Math.log(62));
+		var tempkeys= '';
+		while ( tempkeys.length < digits){
+			if ( tempkeys != ''){ tempkeys+= '-'; }
+			for ( var i=0; i<10; i++){
+				tempkeys+= safe.charAt( Math.floor( Math.random() * safe.length));
+			}
+		}
+		JL_cryActive= true;
+		multihttp(( PHPlibpath +'?setBigKey=' +encryptToServer( tempkeys) +'&n=' +JL_cryname), '', 'JL_initCryptoStep5');
+		JL_rc4keys= tempkeys;
+		JL_crybits= Math.round( Math.log( 62) * JL_rc4keys.length / Math.log(2));
+	}else{
+		JL_initCryptoStep5( 'no');
+	}
+}	
+
+function JL_initCryptoStep5( a){
+	if ( decryptFromServer( unescape( a))=='encryption_secured'){	
+		JL_cryptcomm(( JL_crybits+'-bit Secure Channel Established'), 8, 'blink');
 		JL_cryActive= true;
 		try{
 			cryptoStarted( JL_crybits, JL_cryname, JL_rc4keys);
@@ -377,17 +374,19 @@ function JL_initCryptoStep4( a){
 			setTimeout( ("initCrypto( "+ JL_crybits+ ")"), 500);	
 		}else{
 			JL_cryptcomm( 'Secure channel canceled', 3, '');		
+			try{
+				cryptoUnavalable( JL_crybits, JL_cryname, JL_rc4keys);
+			}catch(e){}
 		}
-		cryptoUnavalable( JL_crybits, JL_cryname, JL_rc4keys);
 	}
 }
 
 function JL_RSAencrypt( str, a, b, callback){
-	JL_cryptcomm( 'Setting Session Keys', 60, 'Whirl,Count' );
-	JL_RSAencryptStep( str, a, b, callback, '1', 0);
+	JL_cryptcomm( 'Negotiating Session Key', 60, 'Whirl,Count' );
+	JL_RSAencryptStep( (''+str), (''+a), (''+b), '1', callback, 0);
 }
 
-function JL_RSAencryptStep( str, a, b, callback, result, count){	
+function JL_RSAencryptStep( str, a, b, result, callback, count){	
 	count++;
 	if ( JL_bccomp( JL_bcmod( a, '2'), '1')==0) {
 		result = JL_bcmod( JL_bcmul( result, str), b);
@@ -395,14 +394,14 @@ function JL_RSAencryptStep( str, a, b, callback, result, count){
 	str= JL_bcmod( JL_bcmul( str, str), b);
 	a= JL_bcdiv( a, '2');
 	if ( JL_bccomp( a, '0')!=0){
-		var e= "JL_RSAencryptStep('" +str+"','" +a+"','" +b+"','" +callback +"','" +result+"','" +count+"')";
+		var e= "JL_RSAencryptStep('" +str+"','" +a+"','" +b+"','" +result+"','" +callback +"'," +count+")";
 		setTimeout( e, 10);	
 		clearTimeout( JL_crytime);
 		try{
-			ge('cryptocount').innerHTML= count;
+			ge('cryptocount').innerHTML= ( 60 - count);
 		}catch(e){}
 	}else{
-		eval( callback+'("'+ escape( result)+'")' );
+		eval( callback+'("'+ result+'")' );
 	}
 }
 
@@ -413,29 +412,29 @@ function JL_enableAXCCStrue( a){
 		alert("PHP Library path is incorrect or PHP library is not found.\n\najax, Cookies, Sessions, XDomain and Crypto javascript functions may not be available.\n\nIf this is intentional set\nJL_setAjax \nto false in the file jerrysLibrary.js\n\n002");
 	}else{
 		JL_crystart= 0;
-		JL_cryptcomm( 'Communication Established', 10, 'blink');		
+		JL_cryptcomm( 'Unencrypted Communication Established', 10, 'blink');		
 	}
 }
 
-function JL_RC4crypt( str, key, secure){
-	if ( !JL_cryActive && secure!='test'){
-		alert ( "A secure channel has not yet been established.\n\nWait a few seconds and try again\n\n003");
-		return false;	
+function JL_randomFill( safe, n){
+	var out= '';
+	for (var i=0; i<n; i++){
+		out+= safe.charAt( Math.floor( Math.random() * safe.length));
 	}
+	return out;
+}
 
-	var validcrypt= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
-//validcrypt= '';
-//for (i=0; i<128; i++){ validcrypt+= String.fromCharCode(i); }	
+function JL_RC4crypt( str, key){
+	var clen= 128;
 	var s= [];
 	var j= 0;
 	var x= 0;
 	var res= '';
-	for (var i= 0; i<validcrypt.length; i++){
+	for (var i= 0; i<clen; i++){
 		s[i]= i;
 	}
-	for (i= 0; i<validcrypt.length; i++) {
-		j= (j + s[i] + key.charCodeAt(i % key.length)) % validcrypt.length;
-		//j= (j + s[i] + ( JL_crychar.indexOf( key.charAt( i % key.length)))) % JL_crychar.length;
+	for (i= 0; i<clen; i++) {
+		j= (j + s[i] + key.charCodeAt(i % key.length)) % clen;
 		x= s[i];
 		s[i]= s[j];
 		s[j]= x;
@@ -443,14 +442,12 @@ function JL_RC4crypt( str, key, secure){
 	i= 0;
 	j= 0;
 	for (var y= 0; y<str.length; y++) {
-		i= (i + 1) % validcrypt.length;
-		j= (j + s[i]) % validcrypt.length;
+		i= (i + 1) % clen;
+		j= (j + s[i]) % clen;
 		x= s[i];
 		s[i]= s[j];
 		s[j]= x;
-		res+= String.fromCharCode(str.charCodeAt(y) ^ s[(s[i] + s[j]) % validcrypt.length]);
-		//res+= JL_crychar.charAt(str.charCodeAt(y) ^ s[(s[i] + s[j]) % JL_crychar.length]);
-		//res+= JL_crychar.charAt( JL_crychar.indexOf( str.charAt(y)) ^ s[(s[i] + s[j]) % JL_crychar.length]);
+		res+= String.fromCharCode(str.charCodeAt(y) ^ s[(s[i] + s[j]) % clen]);
 	}
 	return res;
 }
@@ -459,10 +456,18 @@ function JL_cryptcomm( mess, time, whirlBlinkCount ){
 	clearTimeout( JL_crytime);
 	if ( !JL_crycomm ){ 
 		try {
-			ge('securecomm').innerHTML= '';
+			ge('securecomm').innerHTML= img;
 			ge('securecomm').style.top= '-55px';
 			JL_crycomm= true;
 		}catch(e){
+			try {
+				ge('secureComIcon').innerHTML= '<div id="securecommimg" style="position:fixed; top:-5px; left:-5px; width:30px; height:20px; text-align:right; overflow:hidden; border-radius:5px; background:#eee; padding:5px; font-family:tahoma; font-size:16px; color:grey;"></div><div id="securecomm" style="position:fixed; top:-30px; left:30px; height:20px; overflow:hidden; border-radius:5px; background:#ddd; padding:5px; font-family:tahoma; font-size:16px; color:grey;"></div>';
+				ge('securecomm').innerHTML= img;
+				ge('securecomm').style.top= '-55px';
+				JL_crycomm= true;
+			}catch(e){
+				JL_crycomm= false;
+			}
 			JL_crycomm= false;
 		}
 	}
@@ -472,9 +477,16 @@ function JL_cryptcomm( mess, time, whirlBlinkCount ){
 			if ( whirlBlinkCount.toLowerCase().indexOf('whirl') > -1){
 				m= '<img src="http://jerrywickey.com/israel/images/whirl.gif" width="16" height="16" border="0" valign="bottom"> ';
 			}
-			m+= '<span id="cryptocount" style="color: red; font-size: 0.7em;"></span> ';
+			m+= '<span id="cryptocount" style="color: red; font-size: 0.7em;"></span> ';					
 			ge('securecomm').style.top= '-5px';
 			ge('securecomm').innerHTML= m + mess;
+			var img= '<img style="width:25px; height:20px; margin-top: 3px;"  onmouseover="ms(2);JL_cryptcomm(\' \',4,\'\')" onmouseout="ms(1)" onclick="JL_cryptcomm(\' \',4,\'\');if(confirm(\'';
+			if ( JL_cryActive){
+				img+= 'Encryption key\\n\\n'+JL_rc4keys +'\\n\\n'+ JL_crybits+'-bit Secure connection. Click Ok to refresh key\')){initCrypto(JL_crybits)}" src="http://jerrywickey.com/images/lockred.gif">';
+			}else{
+				img+= 'Connection is unlocked, plain text. Click Ok to establish a secure connection\')){initCrypto(JL_crybits)}" src="http://jerrywickey.com/images/unlockred.gif">';
+			}
+			ge('securecommimg').innerHTML= img;
 		}
 		if ( mess.length > 0){
 			ge('securecomm').style.top= '-5px';
@@ -520,44 +532,30 @@ function JL_browserspec(){
 // BC Math Library ===============================================================
 
 function JL_bccomp( a, b){
-	a= (''+a);
-	b= (''+b);
-	if ( a.indexOf('.') > -1){
-		a= a.substring( 0, a.indexOf('.'));
-	}
-	if ( b.indexOf('.') > -1){
-		b= b.substring( 0, b.indexOf('.'));
-	}
 	if (a.length > b.length){ return 1; }	
 	if (a.length < b.length){ return -1; }
-	var i= 0;
-	while ( a.charAt(i)==b.charAt(i) && ++i<a.length){ }
+	var i= 0; while ( a.charAt(i)==b.charAt(i) && ++i<a.length){ }
 	if ( i==a.length){ return 0; }
 	if ( parseInt( a.charAt(i)) > parseInt( b.charAt(i))){ return 1; }	
 	return -1;		
 }
 
 function JL_bcadd( a, b){
-	a= (''+a);
-	b= (''+b);
-	while ( a.length < b.length){ a= '0'+a; }
-	while ( b.length < a.length){ b= '0'+b; }
-	a= '0'+a;
-	b= '0'+b;
-	var s= a.split('');
+	var zero= '00000000000000000000'; while ( zero.length < a.length + b.length){ zero+= ''+zero; } 
+	if ( a.length < b.length){ a= ''+ zero.substring( 0, ( b.length - a.length )) + a; }
+	if ( b.length < a.length){ b= ''+ zero.substring( 0, ( a.length - b.length )) + b; }
+	var s= ('0'+a).split('');
 	var t= 0;
-	for (var i=0; i<s.length-1; i++){
+	for (var i=0; i<a.length; i++){
 		t= parseInt( s[s.length-i-1]) + parseInt( b.charAt( b.length-i-1));;
-		if (t>9){
+		if (t > 9){
 			s[s.length-i-1]= t - 10;
 			s[s.length-i-2]= parseInt( s[s.length-i-2]) + 1;
 		}else{
 			s[s.length-i-1]= t;
 		}		
 	}
-	var v= s.join('')+' ';
-	v= trim( v, '0');
-	return trim( v, '');
+	return trim( trim(( s.join('')+' '), '0'), '');
 }
 
 function JL_bcsub( a, b){
@@ -572,7 +570,6 @@ function JL_bcsub( a, b){
 		b= x;
 		minus= '-';
 	}
-	a= (''+a);
 	var s= a.split('');
 	var t= 0;
 	for (var i=0; i<s.length; i++){
@@ -585,16 +582,12 @@ function JL_bcsub( a, b){
 			s[s.length-i-1]= parseInt( t);
 		}		
 	}
-	var v= s.join('')+' ';
-	v= trim( v, '0');
-	return minus + trim( v, '');
+	return minus + trim( trim(( s.join('')+' '), '0'), '');
 }
 
 function JL_bcmul( a, b){
 	var s= [];
-	for (var i=0; i < a.length + b.length; i++){
-		s[i]= 0;
-	}
+	for (var i=0; i < a.length + b.length; i++){ s[i]= 0; }
 	var t= 0;
 	for (i=0; i<b.length; i++){	
 		for (var j=0; j<a.length; j++){
@@ -604,9 +597,7 @@ function JL_bcmul( a, b){
 		}
 	}
 	s.reverse();
-	var v= s.join('')+' ';
-	v= trim( v, '0');
-	return trim( v, '');
+	return trim( trim(( s.join('')+' '), '0'), '');
 }
 
 function JL_bcdiv( a, b){
@@ -621,8 +612,8 @@ function JL_bcdiv( a, b){
 		e= b;
 		i= 0;
 		while( JL_bccomp( a, e) >= 0){
-			r= JL_bcadd( r, rr);
 			a= JL_bcsub( a, e);
+			r= JL_bcadd( r, rr);
 			if ( typeof es[i] == 'undefined'){
 				es[i]= JL_bcmul( e, '2');
 				rrs[i]= JL_bcmul( rr, '2');
@@ -632,8 +623,22 @@ function JL_bcdiv( a, b){
 			i++;
 		}
 	}
-	return r;
-	// a is the remainder that is modulo
+	// a is the remainder
+	var decimalportion= '';
+//  add these lines for decimal division
+//	var desiredprecision= 0; // for decimal portion
+//	var prec= 0;
+//	while ( prec < desiredprecision){
+//		a+= '0'; // multiplay remainder by 10
+//		a= bcmod( a, b);
+//		decimalportion+= a;
+//		prec++;
+//	}	
+//	decimalportion= trim(( '.' + decimalportion), '0');
+//	if ( decimalportion.length == 1){ 
+//		decimalportion= '';
+//	}
+	return r + decimalportion;
 }
 
 function JL_bcmod( a, m){
