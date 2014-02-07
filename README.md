@@ -1,12 +1,28 @@
 AJAX-Encryption
 ===============
-finishing documentation and test page.  Check back mid week  first week in Feb
+Jerry's Cryptography and AJAX javascript and PHP Library
 
+Ubiquitous Robust Encryption
 
-Library for easy RSA encryption of all AJAX data communication between client and server on any web page.  Library is javascript and PHP
+Any web page can easily employ robust encryption
+
+No SSL, no secure server needed. javascript and PHP function library does everything, even client to server URL encoding automatically		
+
+RC4 over RSA really is just this easy 
+
+js: <body onload= initCrypto( 1024 bit)
+
+js: encryptToServer( clientPlainText)
+
+PHP: decryptFromClient( encryptedDataFromClient)
+
+PHP: encryptToClient( serverPlainText)
+
+js: decryptFromServer( encryptedDataFromServer)
 
 Link to http://jerrywickey.com/test/viewJerrysLibrary.php to view the library in action and for instruction and explaination.  The page source code gives full examples of each function. 
 
-javascript:  bool-   initCrypto( numberOfBits);  string- encryptToServer( str);  string- decryptFromServer( str);  
+Encrypt everything on the Internet from mobile device web apps to dinner recipe web pages. The technology is now free.
 
-PHP: string- encryptToClient( $str); string- decryptFromClient( $str);
+Encrypting only important documents merely identifies which documents are important, attracting the most powerful decryption efforts. Which is better? A society in which no one can have any secrets? Or a society in which anyone can keep everything secret?
+
