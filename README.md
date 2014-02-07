@@ -2,13 +2,7 @@ AJAX-Encryption
 ===============
 Jerry's Cryptography and AJAX javascript and PHP Library
 
-Ubiquitous Robust Encryption
-
-Any web page can easily employ robust encryption
-
-No SSL, no secure server needed. javascript and PHP function library does everything, even client to server URL encoding automatically		
-
-RC4 over RSA really is just this easy 
+Ubiquitous Robust Encryption.  Any web page can easily employ robust encryption.  No SSL, no secure server needed. javascript and PHP function library does everything, even client to server URL encoding automatically.  RC4 over RSA really is just this easy 
 
 js: <body onload= initCrypto( 1024 bit)
 
