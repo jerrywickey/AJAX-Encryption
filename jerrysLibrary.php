@@ -1,50 +1,56 @@
 <?php
 // Jerry's Crypto-AJAX JavaScript and PHP Library
 // Jan 8, 2014   Key West, FL US   
-// jerry @-symbol jerrywickey dot-symbol-. com   
+// email - jerry (@-symbol-) jerrywickey (.-symbol-) com   
 // phone - eight hundred - seven two two - two two eight zero
 
 // thanks to Stevish RSA http://stevish.com/rsa-encryption-in-pure-php 
 // thanks to Ali Farhadi RC4 https://gist.github.com/farhadi/2185197
+
+// This newest version of this file and its manual can be downloaded from 
+// http://jerrywickey.com/test/testJerrysLibrary.php
 
 
 // php scripts must include 
 //   include('/your_path/jerrysLibrary.php');
 // change '/your_path/' to the path on your server where you placed this file
 
+
 // someone could abuse your server if you allow xdomaim    
 define ( 'ALLOWXDOMAIN', 'true');  // true / false
 
+// store session decryption key in SESSION variable
+define ( 'STOREKEYINSESSION', 'true');   // true / false
 
-// user php Functions ===============================================================
+
+// user PHP Functions ===============================================================
 
 function decryptFromClient( $str){
-	if ( !isset( $_SESSION['JL_ses'])){ session_start(); } 
-	$a= RC4crypt( $str, $_SESSION['sesrc4key']);
-	$VA= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
-	$VE= '!#$*';
+	$fillsafe= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+	$urlsafe= $fillsafe . '-_';
+	$esc= '().*';
 	$out= '';
-	for ($i=0; $i<strlen( $a); $i++){
-		if ( strpos( $VE, $a[$i])!==false){
-			$out.= $a[$i];	
+	for ($i=0; $i<strlen( $str); $i++){
+		if ( strpos( $urlsafe, $str[$i]) !== false){
+			$out.= $str[$i];	
 		}else{
-			$out.= chr(( strpos( $VE, $a[$i]) * 64) + strpos( $VA, $a[$i+1]));
+			$out.= chr(( strpos( $esc, $str[$i]) * 64) + strpos( $urlsafe, $str[$i+1]));
 			$i++;			
 		}
 	}
-	return substr( $out, (strpos( $out, '_-') + 2) );
+	session_start();
+	$a= RC4crypt( $out, $_SESSION['JL_keyfilename']);
+	if ( strpos( $a, 'auTheNtiCate_-') === false){
+		return false;
+	}
+	return substr( $a, ( strpos( $a, 'auTheNtiCate_-') + 14));
 }
 
 function encryptToClient( $str){
-	$str= '_-' . $str;
-	while ( strlen( $str) < 53 ){
-		$str= '_______' . $str;
-	}
-	while ( strlen( $str) % 53 > 4 ){
-		$str= '_____' . $str;
-	}		
-	if ( !isset( $_SESSION['JL_ses'])){ session_start(); } 
-	return RC4crypt( $str, $_SESSION['sesrc4key']);
+	$fillsafe= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+	$str= JL_randomFill( $fillsafe, ( 53- (( strlen( $str) + 14) % 53))) . 'auTheNtiCate_-' . $str;
+	session_start();
+	return RC4crypt( $str, $_SESSION['JL_keyfilename']);
 }
 
 function RSAencrypt( $num, $GETn){
@@ -70,19 +76,16 @@ function RC4crypt( $str, $GETn){
 	if ( file_exists( 'temp/bigprimes'.hash( 'sha256', $GETn).'.php')){
 		$t= explode( '>,', file_get_contents('temp/bigprimes'.hash( 'sha256', $GETn).'.php'));
 		$key= ''.$t[12];
-		$VALIDCRYPT= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
-//$VALIDCRYPT= '';
-//for ($i=0; $i<256; $i++){ $VALIDCRYPT.= chr($i); }	
+		$clen= 128;
 		$s= array();
 		$j= 0;
 		$x= 0;
 		$res= '';
-		for ($i=0; $i<strlen($VALIDCRYPT); $i++){
+		for ($i=0; $i<$clen; $i++){
 			$s[$i]= $i;
 		}
-		for ($i=0; $i<strlen($VALIDCRYPT); $i++){
-			$j= ($j + $s[$i] + ord($key[$i % strlen($key)])) % strlen($VALIDCRYPT);
-			//$j= ($j + $s[$i] + strpos( $chars, substr( $key, ($i % strlen( $key)), 1))) % strlen($chars);
+		for ($i=0; $i<$clen; $i++){
+			$j= ($j + $s[$i] + ord($key[$i % strlen($key)])) % $clen;
 			$x= $s[$i];
 			$s[$i]= $s[$j];
 			$s[$j]= $x;
@@ -90,14 +93,12 @@ function RC4crypt( $str, $GETn){
 		$i= 0;
 		$j= 0;
 		for ($y=0; $y<strlen($str); $y++){
-			$i= ($i + 1) % strlen($VALIDCRYPT);
-			$j= ($j + $s[$i]) % strlen($VALIDCRYPT);
+			$i= ($i + 1) % $clen;
+			$j= ($j + $s[$i]) % $clen;
 			$x= $s[$i];
 			$s[$i]= $s[$j];
 			$s[$j]= $x;
-			$res.= chr(ord($str[$y]) ^ $s[($s[$i] + $s[$j]) % strlen($VALIDCRYPT)]);
-			//$res.= substr( $chars, (ord($str[$y]) ^ $s[($s[$i] + $s[$j]) % strlen($chars)]), 1);
-			//$res.= substr( $chars, ( strpos( $chars, ( substr( $str, $y, 1))) ^ $s[($s[$i] + $s[$j]) % strlen($chars)]), 1);
+			$res.= chr(ord($str[$y]) ^ $s[($s[$i] + $s[$j]) % $clen]);
 		}
 	}
 	return $res;
@@ -142,8 +143,7 @@ if (isset($_GET['newchannel'])){
 			if( !$num) {
 				continue;
 			}
-			$j= $i;
-			
+			$j= $i;		
 			for ( $j+= $i; $j<20000; $j+= $i){
 				$numbers[$j]= 0;
 			}
@@ -159,18 +159,29 @@ if (isset($_GET['newchannel'])){
 	}
 	$bits= $_GET['newchannel'];
 	$name= hash( 'sha256', $_GET['n']);
-	if ( JL_threeLargePrimes( $bits, $name)){ 
-		$t= intval( $_GET['t']);
-		if ( $t<180){ $t= 180; }
-		$digits= floor( $bits * 0.3 * 180/$t) - 9 + mt_rand( 0, 7);
-		if ( $digits < 10){ $digits= 10; }
+	$t= intval( $_GET['t']);
+	if ( $t<100){ $t= 100; }
+	if ( $t>1000){ $t= 1000; }
+	$ex= pow( 1/$t, 0.4);
+	$size= floor( 1000 * $ex);
+	$digits= floor((( $size * 0.3) - 9 + mt_rand( 0, 7)) * $ex);
+	while ( $digits >= ( $size * 0.3) - 3){ $digits--; }
+	if ( file_exists( 'temp/bigprimes'.$name.'.php')){
 		$f= file_get_contents( 'temp/bigprimes'.$name.'.php');
 		if ( strpos( $f, '>,r>,') !== false){
 			$keys = explode( '>,', $f);
 			echo 'public key,'.$keys[4].','.$keys[10].','.$keys[6].','.$digits.',';
 			exit();
 		}
-	} 
+	}
+	if ( JL_threeLargePrimes( $size, $name, $_GET['n'])){ 
+		$f= file_get_contents( 'temp/bigprimes'.$name.'.php');
+		if ( strpos( $f, '>,r>,') !== false){
+			$keys = explode( '>,', $f);
+			echo 'public key,'.$keys[4].','.$keys[10].','.$keys[6].','.$digits.',';
+			exit();
+		}
+	}
 	echo 'not found,,,,';
 	exit();
 }
@@ -181,8 +192,6 @@ if (isset($_GET['setkey'])){
 	if ( file_exists( 'temp/bigprimes'.$name.'.php')){
 		if ( strpos( file_get_contents( 'temp/bigprimes'.$name.'.php'), '>,rc4>,') === false){
 			file_put_contents( ('temp/bigprimes'.$name.'.php'), ($rc4key . '>,rc4>,'), FILE_APPEND);
-			session_start();
-			$_SESSION['sesrc4key']= $_GET['n'];	
 			echo RC4crypt( 'encryption_secured', $_GET['n']);
 		}
 	}else{
@@ -191,6 +200,23 @@ if (isset($_GET['setkey'])){
 	exit();
 }
 
+if (isset($_GET['setBigKey'])){
+	$bigkey= decryptFromClient( $_GET['setBigKey']);
+	$name= hash( 'sha256', $_GET['n']);
+	if ( file_exists( 'temp/bigprimes'.$name.'.php')){
+		$t= explode( '>,', file_get_contents( 'temp/bigprimes'.$name.'.php'));
+		$t[12]= $bigkey;
+		file_put_contents( ('temp/bigprimes'.$name.'.php'), implode( '>,', $t));
+		if ( STOREKEYINSESSION == 'true'){
+			session_start();
+			$_SESSION['JL_key']= $bigkey;
+		}
+		echo encryptToClient( 'encryption_secured');
+	}else{
+		echo 'no,,,,';	
+	}
+	exit();
+}
 
 // AJAX GET functions ===========================================================
 
@@ -234,20 +260,31 @@ if ( isset( $_GET['getses'])){
 }
 
 if ( isset( $_GET['xdomain'])){
-	if ( strtolower( ALLOWXDOMAIN)=='true'){
-		$agent= ''; if ( strlen( $_GET['a'])>0){ $agent= $_GET['a']; } 
-		$timeout= ''; if ( strlen( $_GET['t'])>0){ $timeout= $_GET['t']; } 
-		$cookiejar= ''; if ( strlen( $_GET['c'])>0){ $cookiejar= $_GET['c']; } 
-		$post= ''; if ( strlen( trim( $_POST['p']))>0){ $post= $_POST['p']; } 
-		echo JL_geturl($_GET['xdomain'], $agent, $timeout, $post, $cookiejar);
+	if ( strtolower( ALLOWXDOMAIN) != 'true'){
+		echo 'false';
+		exit();
+	}		
+	if ( $_GET['xdomain']=='noaccess'){
+		file_put_contents( 'xdomain.txt', 'no');
 	}
+	if ( file_exists( 'xdomain.txt')){
+		if ( stripos( file_get_contents( 'xdomain.txt'), 'no') !== false){
+			echo 'false';
+			exit();
+		}
+	}
+	$agent= ''; if ( strlen( $_GET['a'])>0){ $agent= $_GET['a']; } 
+	$timeout= ''; if ( strlen( $_GET['t'])>0){ $timeout= $_GET['t']; } 
+	$cookiejar= ''; if ( strlen( $_GET['c'])>0){ $cookiejar= $_GET['c']; } 
+	$post= ''; if ( strlen( trim( $_POST['p']))>0){ $post= $_POST['p']; } 
+	echo JL_geturl($_GET['xdomain'], $agent, $timeout, $post, $cookiejar);
 	exit();
 }
 
 
 // internal php Functions ===========================================================
 
-function JL_threeLargePrimes($bits, $name){
+function JL_threeLargePrimes($bits, $name, $GETn){
  	$v= rand( 2,6);
  	if ( !file_exists( 'temp/bigprimes'.$name.'.php')){
 		$u= JL_make_prime( ceil( $bits / 2) + $v);
@@ -282,13 +319,14 @@ function JL_threeLargePrimes($bits, $name){
 				$p= $p;
 				$b= $bits;
 				$r = bcmul($u, $v);
-				$phir = bcmul( bcsub($u, 1), bcsub($v, 1));
 				$q= JL_euclid( $p, bcmul( bcsub( $u, 1), bcsub( $v, 1)));
 				file_put_contents(('temp/bigprimes'.$name.'.php'), ($p.'>,p>,'.$bits.'>,b>,'.$q.'>,q>,'.$r.'>,r>,'), FILE_APPEND);
-				// php, u, v,, p,, b bits,, q private,, r,, rc4key,,
-				// 0    1  2   4   6        8           10  12
+				// php, u, v,, p,, b bits,, q private,, r ,, rc4key,,
+				// 0    1  2   4   6        8           10   12
 				// public key is  $t[4] $t[10] $t[6] 
 				// private key is $t[8] $t[10] $t[6]
+				session_start();
+				$_SESSION['JL_keyfilename']= $GETn;
 			}else{
 				return false;
 			}
@@ -355,22 +393,6 @@ function JL_millerTest( $num, $base) {
 	return false;
 }
 
-function JL_powmod( $num, $pow, $mod) {
-	if ( function_exists('bcpowmod')) {
-		return bcpowmod( $num, $pow, $mod);
-	}
-	$result= '1';
-	do {
-		if ( !bccomp( bcmod( $pow, '2'), '1')) {
-			$result = bcmod( bcmul( $result, $num), $mod);
-		}
-	   $num = bcmod( bcpow( $num, '2'), $mod);
-
-	   $pow = bcdiv( $pow, '2');
-	} while ( bccomp( $pow, '0'));
-	return $result;
-}
-
 function JL_euclid( $num, $mod){
 	$x= '1';
 	$y= '0';
@@ -388,6 +410,30 @@ function JL_euclid( $num, $mod){
 		$x= bcadd( $x, $mod);
 	}
 	return $x;
+}
+
+function JL_powmod( $num, $pow, $mod) {
+	if ( function_exists('bcpowmod')) {
+		return bcpowmod( $num, $pow, $mod);
+	}
+	$result= '1';
+	do {
+		if ( !bccomp( bcmod( $pow, '2'), '1')) {
+			$result = bcmod( bcmul( $result, $num), $mod);
+		}
+	   $num = bcmod( bcpow( $num, '2'), $mod);
+
+	   $pow = bcdiv( $pow, '2');
+	} while ( bccomp( $pow, '0'));
+	return $result;
+}
+
+function JL_randomFill( $safe, $n){
+	$out= '';
+	for ( $i=0; $i<$n; $i++){
+		$out.= $safe[ mt_rand( 0, strlen( $safe))];
+	}
+	return $out;
 }
 
 function JL_geturl( $url, $agent, $timeout, $post, $cookiejar){
