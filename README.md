@@ -14,7 +14,7 @@ PHP: encryptToClient( serverPlainText)
 
 js: decryptFromServer( encryptedDataFromServer)
 
-Link to http://jerrywickey.com/test/viewJerrysLibrary.php to view the library in action and for instruction and explaination.  The page source code gives full examples of each function. 
+Link to http://jerrywickey.com/test/testJerrysLibrary.php to view the library in action and for instruction and explaination.  The page source code gives full examples of each function. 
 
 Encrypt everything on the Internet from mobile device web apps to dinner recipe web pages. The technology is now free.
 
