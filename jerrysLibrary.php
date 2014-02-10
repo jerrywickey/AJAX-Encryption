@@ -3,31 +3,27 @@
 // Jan 8, 2014   Key West, FL US   
 // email - jerry (@-symbol-) jerrywickey (.-symbol-) com   
 // phone - eight hundred - seven two two - two two eight zero
-
+//
 // thanks to Stevish RSA http://stevish.com/rsa-encryption-in-pure-php 
 // thanks to Ali Farhadi RC4 https://gist.github.com/farhadi/2185197
-
+//
 // This newest version of this file and its manual can be downloaded from 
 // http://jerrywickey.com/test/testJerrysLibrary.php
-
-
+//
+//
 // php scripts must include 
-//   include('/your_path/jerrysLibrary.php');
+// include('/your_path/jerrysLibrary.php');
 // change '/your_path/' to the path on your server where you placed this file
 
 
 // someone could abuse your server if you allow xdomaim    
 define ( 'ALLOWXDOMAIN', 'true');  // true / false
 
-// store session decryption key in SESSION variable
-define ( 'STOREKEYINSESSION', 'true');   // true / false
-
 
 // user PHP Functions ===============================================================
 
 function decryptFromClient( $str){
-	$fillsafe= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-	$urlsafe= $fillsafe . '-_';
+	$urlsafe= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
 	$esc= '().*';
 	$out= '';
 	for ($i=0; $i<strlen( $str); $i++){
@@ -41,14 +37,13 @@ function decryptFromClient( $str){
 	session_start();
 	$a= RC4crypt( $out, $_SESSION['JL_keyfilename']);
 	if ( strpos( $a, 'auTheNtiCate_-') === false){
-		return false;
+		return false; 
 	}
 	return substr( $a, ( strpos( $a, 'auTheNtiCate_-') + 14));
 }
 
 function encryptToClient( $str){
-	$fillsafe= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-	$str= JL_randomFill( $fillsafe, ( 53- (( strlen( $str) + 14) % 53))) . 'auTheNtiCate_-' . $str;
+	$str= JL_randomFill( 'JerryWickey', ( 53- (( strlen( $str) + 14) % 53))) . 'auTheNtiCate_-' . $str;
 	session_start();
 	return RC4crypt( $str, $_SESSION['JL_keyfilename']);
 }
@@ -73,6 +68,7 @@ function RSAdecrypt( $num, $GETn){
 
 function RC4crypt( $str, $GETn){
 	$res= 'no keys';
+	$key= '';
 	if ( file_exists( 'temp/bigprimes'.hash( 'sha256', $GETn).'.php')){
 		$t= explode( '>,', file_get_contents('temp/bigprimes'.hash( 'sha256', $GETn).'.php'));
 		$key= ''.$t[12];
@@ -160,11 +156,10 @@ if (isset($_GET['newchannel'])){
 	$bits= $_GET['newchannel'];
 	$name= hash( 'sha256', $_GET['n']);
 	$t= intval( $_GET['t']);
-	if ( $t<100){ $t= 100; }
+	if ( $t<250){ $t= 250; }
 	if ( $t>1000){ $t= 1000; }
-	$ex= pow( 1/$t, 0.4);
-	$size= floor( 1000 * $ex);
-	$digits= floor((( $size * 0.3) - 9 + mt_rand( 0, 7)) * $ex);
+	$size= floor( 1000 * pow( 1/$t, 0.4));
+	$digits= floor(( $size * 0.3) - 9 + mt_rand( 0, 7));
 	while ( $digits >= ( $size * 0.3) - 3){ $digits--; }
 	if ( file_exists( 'temp/bigprimes'.$name.'.php')){
 		$f= file_get_contents( 'temp/bigprimes'.$name.'.php');
@@ -192,31 +187,17 @@ if (isset($_GET['setkey'])){
 	if ( file_exists( 'temp/bigprimes'.$name.'.php')){
 		if ( strpos( file_get_contents( 'temp/bigprimes'.$name.'.php'), '>,rc4>,') === false){
 			file_put_contents( ('temp/bigprimes'.$name.'.php'), ($rc4key . '>,rc4>,'), FILE_APPEND);
-			echo RC4crypt( 'encryption_secured', $_GET['n']);
+			$t= explode( '>,', file_get_contents( 'temp/bigprimes'.$name.'.php'));
+			$t[12]= decryptFromClient( $_GET['b']);
+			file_put_contents( ('temp/bigprimes'.$name.'.php'), implode( '>,', $t));
+			echo encryptToClient( 'encryption_secured');
+			exit();
 		}
-	}else{
-		echo 'no,,,,';	
 	}
+	echo 'no,,,,';	
 	exit();
 }
 
-if (isset($_GET['setBigKey'])){
-	$bigkey= decryptFromClient( $_GET['setBigKey']);
-	$name= hash( 'sha256', $_GET['n']);
-	if ( file_exists( 'temp/bigprimes'.$name.'.php')){
-		$t= explode( '>,', file_get_contents( 'temp/bigprimes'.$name.'.php'));
-		$t[12]= $bigkey;
-		file_put_contents( ('temp/bigprimes'.$name.'.php'), implode( '>,', $t));
-		if ( STOREKEYINSESSION == 'true'){
-			session_start();
-			$_SESSION['JL_key']= $bigkey;
-		}
-		echo encryptToClient( 'encryption_secured');
-	}else{
-		echo 'no,,,,';	
-	}
-	exit();
-}
 
 // AJAX GET functions ===========================================================
 
