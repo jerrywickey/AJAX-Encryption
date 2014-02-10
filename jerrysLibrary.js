@@ -2,16 +2,17 @@
 // Jan 8, 2014   Key West, FL US   
 // email - jerry (@-symbol-) jerrywickey (.-symbol-) com   
 // phone - eight hundred - seven two two - two two eight zero
-
+//
 // thanks to Stevish RSA http://stevish.com/rsa-encryption-in-pure-php 
 // thanks to Ali Farhadi RC4 https://gist.github.com/farhadi/2185197
-
+//
 // This newest version of this file and its manual can be downloaded from 
 // http://jerrywickey.com/test/testJerrysLibrary.php
 
 
-// cryptoStarted
-// cryptoUnavalable
+// these functions will be called upon successful initiation respectively
+//   cryptoStarted( JL_crybits, JL_cryname, JL_rc4keys)
+//   cryptoUnavalable( JL_crybits, JL_cryname, JL_rc4keys)
 
 
 // if this div is included in HTML page, secure communication status is updated to it
@@ -107,10 +108,9 @@ function encryptToServer( str){
 		return 'none';	
 	}
 	JL_cryptcomm( '<span style="color:red">Encrypted Uplink</span>', 6, '');
-	var safe= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-	str= JL_randomFill( safe, ( 53- (( str.length + 14) % 53))) + 'auTheNtiCate_-' + str;
+	str= JL_randomFill( 'JerryWickey', ( 53- (( str.length + 14) % 53))) + 'auTheNtiCate_-' + str;
 	var estr= JL_RC4crypt( str, JL_rc4keys);
-	var valid= safe + '-_';
+	var valid= '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
 	var esc= '().*';
 	var out= '';
 	for (var i=0; i<estr.length; i++){
@@ -308,7 +308,6 @@ function subtute( replacethis, withthis, intext){
 // internal functions ===========================================================
 
 function JL_initCryptoStep2( a){
-	var ret= true;
 	if ( JL_setAjax){
 		if ( JL_crydone){
 			var b= unescape(a);
@@ -325,51 +324,41 @@ function JL_initCryptoStep2( a){
 				JL_RSAencrypt( JL_rc4keys, c[1], c[2], 'JL_initCryptoStep3');
 			}else if( b.indexOf('not found,')==0){
 				multihttp(( PHPlibpath+'?newchannel='+JL_crybits+'&n='+JL_cryname+'&t='+JL_speedts), '', 'JL_initCryptoStep2')
-			}else{
-				ret= false;
 			}
 		}
 	}else{
 		JL_cryptcomm( 'Secure channel canceled', 3, '');				
-		ret= false;
 	}
-	return ret;
 }
 
 function JL_initCryptoStep3( k){
-	JL_enckeys= unescape( k);
-	multihttp(( PHPlibpath+'?setkey='+ JL_enckeys+'&n='+ JL_cryname), '', 'JL_initCryptoStep4');
+	var safe= '01234567890123456789024571';
+	safe+= 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+	var digits= Math.floor( Math.log(2) * JL_crybits / Math.log(62));
+	var tempkeys= '';
+	while ( tempkeys.length < digits){
+		if ( tempkeys != ''){ tempkeys+= '-'; }
+		for ( var i=0; i<10; i++){
+			tempkeys+= safe.charAt( Math.floor( Math.random() * safe.length));
+		}
+	}
+	JL_enckeys= k;
+	JL_cryActive= true;
+	multihttp(( PHPlibpath+ '?setkey='+JL_enckeys+ '&b='+encryptToServer( tempkeys)+ '&n='+JL_cryname), '', 'JL_initCryptoStep4');
+	JL_rc4keys= tempkeys;
+	JL_crybits= Math.round( Math.log( 62) * JL_rc4keys.length / Math.log(2));
 }
 
 function JL_initCryptoStep4( a){
-	if ( JL_RC4crypt( unescape( a), JL_rc4keys)=='encryption_secured'){	
-		var safe= '01234567890123456789024571';
-		safe+= 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-		var digits= Math.floor( Math.log(2) * JL_crybits / Math.log(62));
-		var tempkeys= '';
-		while ( tempkeys.length < digits){
-			if ( tempkeys != ''){ tempkeys+= '-'; }
-			for ( var i=0; i<10; i++){
-				tempkeys+= safe.charAt( Math.floor( Math.random() * safe.length));
-			}
-		}
-		JL_cryActive= true;
-		multihttp(( PHPlibpath +'?setBigKey=' +encryptToServer( tempkeys) +'&n=' +JL_cryname), '', 'JL_initCryptoStep5');
-		JL_rc4keys= tempkeys;
-		JL_crybits= Math.round( Math.log( 62) * JL_rc4keys.length / Math.log(2));
-	}else{
-		JL_initCryptoStep5( 'no');
-	}
-}	
-
-function JL_initCryptoStep5( a){
 	if ( decryptFromServer( unescape( a))=='encryption_secured'){	
 		JL_cryptcomm(( JL_crybits+'-bit Secure Channel Established'), 8, 'blink');
-		JL_cryActive= true;
 		try{
 			cryptoStarted( JL_crybits, JL_cryname, JL_rc4keys);
 		}catch(e){}
 	}else{
+		JL_cryActive= false;
+		JL_rc4keys= '';
+		JL_crybits= 0;
 		if ( confirm( "A secure channel was not achieved\b\nTry again?")==true ){
 			setTimeout( ("initCrypto( "+ JL_crybits+ ")"), 500);	
 		}else{
@@ -624,21 +613,7 @@ function JL_bcdiv( a, b){
 		}
 	}
 	// a is the remainder
-	var decimalportion= '';
-//  add these lines for decimal division
-//	var desiredprecision= 0; // for decimal portion
-//	var prec= 0;
-//	while ( prec < desiredprecision){
-//		a+= '0'; // multiplay remainder by 10
-//		a= bcmod( a, b);
-//		decimalportion+= a;
-//		prec++;
-//	}	
-//	decimalportion= trim(( '.' + decimalportion), '0');
-//	if ( decimalportion.length == 1){ 
-//		decimalportion= '';
-//	}
-	return r + decimalportion;
+	return r;
 }
 
 function JL_bcmod( a, m){
@@ -658,32 +633,4 @@ function JL_bcmod( a, m){
 		}
 	}
 	return a;
-}
-
-function JL_bcpow( a, e){
-	var p2= '1';
-	var pe= [];
-	var bi= [];
-	var p= 0;
-	while ( JL_bccomp( e, p2) >= 0){
-		bi[p]= p2;
-		pe[p]= false;
-		p2= JL_bcmul( p2, '2');
-		p++;
-	}	
-	for (var i=p; i>=0; i--){
-		if ( JL_bccomp( e, bi[i]) >= 0){
-			pe[i]= true;
-			e= JL_bcsub( e, bi[i]);
-		}
-	}	
-	var res= '1';
-	var ex= a;
-	for (i=0; i<pe.length; i++){
-		if (pe[i]){
-		 	res= JL_bcmul( res, ex);	
-		}
-		ex= JL_bcmul( ex, ex);
-	}
-	return res;
 }
