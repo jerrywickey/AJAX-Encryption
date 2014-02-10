@@ -202,7 +202,7 @@ span.more
 				The AJAX server form handler example is in this page	
 				<br>
 				<br>
-				<div style="color: #8a8; font-weight: bold;">
+				<div style="color: red; font-weight: bold;">
 					<div id="comments">
 						<img src="http://jerrywickey.com/israel/images/whirl.gif" width="15" height="15"> 
 						<span style="font-size: 0.7em;">
@@ -491,12 +491,10 @@ function viewResponse( a){
 			
 		 	Allowing Xdomain is really convenient, but it also opens a certain vulnerability on your server.  Javascript does not allow this because this could be a security issue.  A hacker could send requests to your copy of jerrysLibrary.php having it access web pages to carry out his own nefarious ends.  The web sights accessed would record the IP address of your server not the hacker's.<br><br>
 		 	
-		 	Storing the encryption keys in a SESSION variable might make some things in your code easier, but it makes the keys easier to obtain for a nefarious purpose.  Both these can and should be set to false.  Encryption and AJAX will work just fine without them.  They are set true in the downloaded file.
+			This is set true in the downloaded file.
 
 			<div class="code">
 				line 20: define ( 'ALLOWXDOMAIN', 'true');  // true / false<br><br>
-
-				line 23: define ( 'STOREKEYINSESSION', 'true');   // true / false
 			</div>
 			
 			You must include this line in the HTML header of any page using the libraries.
@@ -1214,12 +1212,13 @@ function submitcomment( name, text, follow){
 function respondetosubmit( a){
 	// decrypt response
 	var r= decryptFromServer( unescape( a));
+	// display response
 	if ( r.indexOf( ' init -->')==-1){
 		r= r + ge('postcomments').innerHTML;
 	}
-	// display resplonse
 	ge('postcomments').innerHTML= r;
 	ge('postcommentsw').style.display= 'none';
+	ge('commentcontent').value= '';
 	// count the number of comments
 	var c= 'Be the first to comment!';
 	if ( r.indexOf( 'class="comment"') > -1){
