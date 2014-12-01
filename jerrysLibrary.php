@@ -412,7 +412,7 @@ function JL_powmod( $num, $pow, $mod) {
 function JL_randomFill( $safe, $n){
 	$out= '';
 	for ( $i=0; $i<$n; $i++){
-		$out.= $safe[ mt_rand( 0, strlen( $safe))];
+		$out.= $safe[ mt_rand( 0, strlen( $safe) -1)];
 	}
 	return $out;
 }
